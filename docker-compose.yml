@@ -1,0 +1,16 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    volumes:
+      - downloads:/app/downloads
+      - iplayer-cache:/root/.get_iplayer
+    restart: unless-stopped
+
+volumes:
+  downloads:
+  iplayer-cache:
