@@ -4,46 +4,60 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BBC Radio Downloader</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* ── BBC brand tokens ──────────────────────────────────── */
+    :root {
+      --bbc-black:   #1d1d1b;
+      --bbc-red:     #bb1919;   /* BBC brand red */
+      --bbc-white:   #ffffff;
+      --bbc-page:    #f2f2f2;
+      --bbc-border:  #e0dcd6;
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #f0ede8;
-      color: #222;
+      font-family: 'BBC Reith Sans', 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bbc-page);
+      color: #111;
       min-height: 100vh;
     }
 
     header {
-      background: #1d1d1b;
+      background: var(--bbc-black);
       padding: 0 24px;
       display: flex;
       align-items: center;
-      gap: 16px;
-      height: 52px;
+      gap: 14px;
+      height: 56px;
+      border-bottom: 4px solid var(--bbc-red);
     }
-    .bbc-mark {
-      font-weight: 900;
-      font-size: 20px;
-      background: white;
-      color: #1d1d1b;
-      padding: 3px 7px;
-      line-height: 1;
+
+    /* BBC three-block logo */
+    .bbc-logo { height: 26px; width: auto; flex-shrink: 0; }
+
+    header h1 {
+      font-size: 15px;
+      font-weight: 400;
+      color: #c8c8c8;
+      flex: 1;
+      letter-spacing: .02em;
     }
-    header h1 { font-size: 14px; font-weight: 400; color: #aaa; flex: 1; }
 
     #version-bar {
       font-size: 12px;
       padding: 5px 24px;
-      background: #555;
-      color: #ddd;
+      background: #3a3a3a;
+      color: #ccc;
+      border-bottom: 1px solid #2a2a2a;
     }
-    #version-bar.ok   { background: #1a6b2a; color: #d4edda; }
-    #version-bar.fail { background: #7a1a1a; color: #f8d7da; }
+    #version-bar.ok   { background: #1a5c28; color: #c8e6c9; }
+    #version-bar.fail { background: #6b1414; color: #ffcdd2; }
 
     /* Tab navigation */
     .tab-bar {
-      background: #1d1d1b;
+      background: var(--bbc-black);
       display: flex;
       padding: 0 16px;
       gap: 2px;
@@ -61,7 +75,7 @@
       transition: color .15s;
     }
     .tab:hover { color: #ccc; }
-    .tab.active { color: white; border-bottom-color: #dc143c; }
+    .tab.active { color: var(--bbc-white); border-bottom-color: var(--bbc-red); }
 
     .container {
       max-width: 920px;
@@ -70,11 +84,11 @@
     }
 
     .card {
-      background: white;
+      background: var(--bbc-white);
       border-radius: 2px;
       padding: 18px 22px;
       margin-bottom: 18px;
-      box-shadow: 0 1px 3px rgba(0,0,0,.1);
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
     }
 
     .card-title {
@@ -82,8 +96,8 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: .05em;
-      color: #1d1d1b;
-      border-left: 4px solid #dc143c;
+      color: var(--bbc-black);
+      border-left: 4px solid var(--bbc-red);
       padding-left: 10px;
       margin-bottom: 14px;
     }
@@ -100,8 +114,8 @@
 
     /* Buttons */
     .btn {
-      background: #dc143c;
-      color: white;
+      background: var(--bbc-red);
+      color: var(--bbc-white);
       border: none;
       padding: 9px 16px;
       font-size: 13px;
@@ -111,14 +125,14 @@
       white-space: nowrap;
       transition: background .15s;
     }
-    .btn:hover    { background: #b0102e; }
+    .btn:hover    { background: #8c1212; }
     .btn:disabled { background: #bbb; cursor: default; }
-    .btn.dark     { background: #1d1d1b; }
-    .btn.dark:hover { background: #444; }
-    .btn.outline  { background: transparent; color: #dc143c; border: 1.5px solid #dc143c; }
-    .btn.outline:hover { background: #fde8ec; }
-    .btn.ghost    { background: transparent; color: #777; border: 1px solid #d0ccc6; font-weight: 400; }
-    .btn.ghost:hover { background: #fde8ec; color: #7a1a1a; border-color: #f5c6cb; }
+    .btn.dark     { background: var(--bbc-black); }
+    .btn.dark:hover { background: #3a3a3a; }
+    .btn.outline  { background: transparent; color: var(--bbc-red); border: 1.5px solid var(--bbc-red); }
+    .btn.outline:hover { background: #fbeaea; }
+    .btn.ghost    { background: transparent; color: #666; border: 1px solid #ccc; font-weight: 400; }
+    .btn.ghost:hover { background: #fbeaea; color: #6b1414; border-color: #e8b4b4; }
     .btn.sm       { padding: 5px 11px; font-size: 12px; }
     .btn.xs       { padding: 3px 8px; font-size: 11px; font-weight: 600; }
 
@@ -128,17 +142,17 @@
       flex: 1;
       padding: 9px 13px;
       font-size: 14px;
-      border: 2px solid #d8d4ce;
+      border: 2px solid #d0ccc6;
       border-radius: 2px;
       outline: none;
-      background: #faf9f7;
+      background: #fafafa;
     }
-    .search-row input:focus, .filter-input:focus { border-color: #dc143c; background: white; }
+    .search-row input:focus, .filter-input:focus { border-color: var(--bbc-red); background: var(--bbc-white); }
     .hint { font-size: 12px; color: #888; margin-top: 8px; }
 
     /* Show cards */
     .show-card {
-      border: 1px solid #e8e4de;
+      border: 1px solid var(--bbc-border);
       border-radius: 2px;
       padding: 12px 14px;
       margin-bottom: 9px;
@@ -146,7 +160,7 @@
       gap: 12px;
       align-items: flex-start;
     }
-    .show-card:hover { border-color: #dc143c; }
+    .show-card:hover { border-color: var(--bbc-red); }
     .show-body { flex: 1; min-width: 0; }
     .show-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
     .show-meta  { font-size: 12px; color: #777; margin-bottom: 5px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
@@ -159,18 +173,18 @@
       align-items: center;
       gap: 10px;
       padding: 10px 14px;
-      background: #1d1d1b;
-      color: white;
+      background: var(--bbc-black);
+      color: var(--bbc-white);
       border-radius: 2px;
       cursor: pointer;
       user-select: none;
     }
-    .station-header:hover { background: #333; }
+    .station-header:hover { background: #2e2e2c; }
     .station-name { font-weight: 700; font-size: 14px; flex: 1; }
     .station-count {
       font-size: 12px;
-      background: #dc143c;
-      color: white;
+      background: var(--bbc-red);
+      color: var(--bbc-white);
       padding: 2px 8px;
       border-radius: 10px;
       font-weight: 700;
@@ -183,11 +197,11 @@
       display: flex;
       align-items: center;
       padding: 8px 14px;
-      border-bottom: 1px solid #f0ece6;
+      border-bottom: 1px solid #efefef;
       gap: 10px;
     }
     .catalogue-show:last-child { border-bottom: none; }
-    .catalogue-show:hover { background: #faf9f7; }
+    .catalogue-show:hover { background: #fafafa; }
     .catalogue-show-name { flex: 1; font-size: 13px; font-weight: 600; }
     .catalogue-show-meta { font-size: 11px; color: #888; white-space: nowrap; }
     .ep-count {
@@ -269,9 +283,9 @@
     .badge-follow   { background: #d4edda; color: #155724; }
 
     /* Cached files */
-    .file-row { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid #f0ece6; gap: 10px; }
+    .file-row { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid #efefef; gap: 10px; }
     .file-row:last-child { border-bottom: none; }
-    .file-row.selected { background: #fff8f8; }
+    .file-row.selected { background: #fff5f5; }
     .file-check { width: 15px; height: 15px; cursor: pointer; flex-shrink: 0; accent-color: #dc143c; }
     .file-name { flex: 1; font-size: 13px; min-width: 0; word-break: break-all; }
     .file-meta { font-size: 12px; color: #888; white-space: nowrap; }
@@ -296,7 +310,14 @@
 <body>
 
 <header>
-  <span class="bbc-mark">BBC</span>
+  <svg class="bbc-logo" viewBox="0 0 74 26" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="BBC">
+    <rect x="0"  y="0" width="22" height="26" fill="white"/>
+    <rect x="26" y="0" width="22" height="26" fill="white"/>
+    <rect x="52" y="0" width="22" height="26" fill="white"/>
+    <text x="11" y="20" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="18" fill="#1d1d1b" text-anchor="middle">B</text>
+    <text x="37" y="20" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="18" fill="#1d1d1b" text-anchor="middle">B</text>
+    <text x="63" y="20" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="18" fill="#1d1d1b" text-anchor="middle">C</text>
+  </svg>
   <h1>Radio Downloader</h1>
 </header>
 <div id="version-bar">Checking for get_iplayer…</div>
