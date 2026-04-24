@@ -463,13 +463,25 @@ async function loadCached() {
 }
 
 function renderCached(files) {
-  const list = document.getElementById('cached-list');
+  const list      = document.getElementById('cached-list');
+  const dlAll     = document.getElementById('dl-all-btn');
+  const delAll    = document.getElementById('del-all-btn');
+  const dlSel     = document.getElementById('dl-selected-btn');
+  const delSel    = document.getElementById('del-selected-btn');
+  const selCount  = document.getElementById('sel-count');
+
   if (!files.length) {
     list.innerHTML = '<div class="empty">No cached files yet</div>';
+    [dlAll, delAll, dlSel, delSel, selCount].forEach(el => el.hidden = true);
     return;
   }
+
+  dlAll.hidden = false;
+  delAll.hidden = false;
+
   list.innerHTML = files.map(f => `
-    <div class="file-row">
+    <div class="file-row" data-name="${esc(f.name)}">
+      <input type="checkbox" class="file-check" data-name="${esc(f.name)}">
       <div class="file-name">${esc(f.name)}</div>
       <div class="file-meta">${fmtSize(f.size)} &middot; ${fmtDate(f.date)}</div>
       <div class="file-actions">
@@ -479,14 +491,84 @@ function renderCached(files) {
     </div>
   `).join('');
 
-  list.querySelectorAll('[data-dl]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      window.location.href = `/api/file/${encodeURIComponent(btn.dataset.dl)}`;
+  list.querySelectorAll('.file-check').forEach(cb => {
+    cb.addEventListener('change', () => {
+      cb.closest('.file-row').classList.toggle('selected', cb.checked);
+      updateSelectionUI();
     });
+  });
+  list.querySelectorAll('[data-dl]').forEach(btn => {
+    btn.addEventListener('click', () => downloadFiles([btn.dataset.dl]));
   });
   list.querySelectorAll('[data-del]').forEach(btn => {
     btn.addEventListener('click', () => deleteFile(btn.dataset.del));
   });
+
+  // Wire bulk buttons once (replace old listeners by cloning)
+  dlAll.replaceWith(dlAll.cloneNode(true));
+  delAll.replaceWith(delAll.cloneNode(true));
+  dlSel.replaceWith(dlSel.cloneNode(true));
+  delSel.replaceWith(delSel.cloneNode(true));
+
+  document.getElementById('dl-all-btn').addEventListener('click', () => downloadFiles(null));
+  document.getElementById('del-all-btn').addEventListener('click', () => deleteFiles(null));
+  document.getElementById('dl-selected-btn').addEventListener('click', () => downloadFiles(getSelected()));
+  document.getElementById('del-selected-btn').addEventListener('click', () => deleteFiles(getSelected()));
+
+  updateSelectionUI();
+}
+
+function getSelected() {
+  return [...document.querySelectorAll('.file-check:checked')].map(cb => cb.dataset.name);
+}
+
+function updateSelectionUI() {
+  const sel     = getSelected();
+  const dlSel   = document.getElementById('dl-selected-btn');
+  const delSel  = document.getElementById('del-selected-btn');
+  const count   = document.getElementById('sel-count');
+  const hasAny  = sel.length > 0;
+  dlSel.hidden  = !hasAny;
+  delSel.hidden = !hasAny;
+  count.hidden  = !hasAny;
+  if (hasAny) count.textContent = `${sel.length} selected`;
+}
+
+async function downloadFiles(names) {
+  // null = all files
+  const body = names ? { files: names } : { all: true };
+  if (names && names.length === 1) {
+    window.location.href = `/api/file/${encodeURIComponent(names[0])}`;
+    return;
+  }
+  try {
+    const res = await fetch('/api/files/zip', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'bbc-radio.zip'; a.click();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    showAlert('Download failed: ' + err.message, 'error');
+  }
+}
+
+async function deleteFiles(names) {
+  // null = all files
+  const label = names ? `${names.length} file${names.length !== 1 ? 's' : ''}` : 'all files';
+  if (!confirm(`Delete ${label}?`)) return;
+  const body = names ? { files: names } : { all: true };
+  try {
+    await apiFetch('/api/files', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    loadCached();
+  } catch (err) {
+    showAlert('Delete failed: ' + err.message, 'error');
+  }
 }
 
 async function deleteFile(name) {

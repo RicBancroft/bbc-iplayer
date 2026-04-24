@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const https = require('https');
+const archiver = require('archiver');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -456,6 +457,45 @@ app.delete('/api/file/:filename', (req, res) => {
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Not found' });
   fs.unlinkSync(filePath);
   res.json({ ok: true });
+});
+
+// ── Bulk download (ZIP) ───────────────────────────────────────────────────────
+
+app.post('/api/files/zip', (req, res) => {
+  const { files, all } = req.body;
+  const names = all
+    ? fs.readdirSync(DOWNLOADS_DIR).filter(f => !f.startsWith('.'))
+    : (Array.isArray(files) ? files.map(f => path.basename(f)) : []);
+
+  if (!names.length) return res.status(400).json({ error: 'No files' });
+
+  const existing = names.filter(n => fs.existsSync(path.join(DOWNLOADS_DIR, n)));
+  if (!existing.length) return res.status(404).json({ error: 'No files found' });
+
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', 'attachment; filename="bbc-radio.zip"');
+
+  const archive = archiver('zip', { zlib: { level: 0 } }); // audio is already compressed
+  archive.on('error', err => { console.error('Zip error:', err); res.end(); });
+  archive.pipe(res);
+  for (const name of existing) archive.file(path.join(DOWNLOADS_DIR, name), { name });
+  archive.finalize();
+});
+
+// ── Bulk delete ───────────────────────────────────────────────────────────────
+
+app.delete('/api/files', (req, res) => {
+  const { files, all } = req.body;
+  const names = all
+    ? fs.readdirSync(DOWNLOADS_DIR).filter(f => !f.startsWith('.'))
+    : (Array.isArray(files) ? files.map(f => path.basename(f)) : []);
+
+  let deleted = 0;
+  for (const name of names) {
+    const fp = path.join(DOWNLOADS_DIR, name);
+    if (fs.existsSync(fp)) { fs.unlinkSync(fp); deleted++; }
+  }
+  res.json({ ok: true, deleted });
 });
 
 app.listen(PORT, () => {
